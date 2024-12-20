@@ -14,6 +14,11 @@ cases_PI <- read_excel("C:/Users/Usman Ola/Downloads/Philip Ibinaiye PHD Raw Dat
 View(cases_PI)
 cases_PI$group<- 1
 
+library(readxl)
+Raw_Data <- read_excel("~/Bluetooth Exchange Folder/Philip Ibinaiye PHD Raw Data.xlsx", 
+                       sheet = "Data")
+View(Raw_Data)
+
 
 ### Merge data for case-control data
 

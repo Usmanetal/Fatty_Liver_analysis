@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
+library(GGally)
+library(ggpubr)
 ### Data analysis of Fatty Liver Disease
 library(tidyverse)
 
@@ -32,16 +34,20 @@ cases_PI <- read_excel("C:/Users/Usman Ola/Downloads/Philip Ibinaiye PHD Raw Dat
 View(cases_PI[,1:5])
 cases_PI$group<- 1
 
-
+ibi_data <- read_excel("C:/Users/Usman Ola/Downloads/Philip Ibinaiye PHD Raw Data (1).xlsx", 
+                       sheet = "Full Data")
+ibi_data$HOMA_IR<-replace(ibi_data$HOMA_IR,ibi_data$HOMA_IR>2,0.55866666666667)
 ### Merge data for case-control data
 
 new_data<- rbind(control_PI,cases_PI)
 
 ### to capture the factor levels against numeric or continous data
-new_data[,c(3:24,26,30,34,46)]<- sapply(new_data[,c(3:24,26,30,34,46)], as.factor)
+ibi_data[,c(3:20,22:24,26,30,34,46)]<- lapply(ibi_data[,c(3:20,22:24,26,30,34,46)], as.factor)
+ibi_data<-ibi_data %>% mutate(grp=recode(BLS,"2"=1,"3"=2))
 
 #### Multivariate Logistic Regression
 attach(new_data)
+
 prof=glm(factor(group)~Religion+
            Physical_Activity+
            Junk_foods+
@@ -72,32 +78,118 @@ tab
 
 ### Univariate Logistic regression
 Eureka<- function(x){
-y=glm(factor(group)~x,data = new_data,family = binomial)
+  y=glm(factor(BLS)~x,data = ibi_data,family = binomial)
 z=summary(y)%>%coefficients()%>%
-  cbind(confint(y))%>%
+  cbind(exp(confint(y)))%>%
   subset(select=c("Estimate","Pr(>|z|)","2.5 %","97.5 %"))%>%
   data.frame()%>%slice(-1)%>%mutate(Estimate=exp(Estimate))
 return(z)
-
 }
 # bind_rows
-Univariat<-rbind(Eureka(Sex),Eureka(Residence),Eureka(Educationa),
-      Eureka(Religion),Eureka(Marital),Eureka(Occupation),
-      Eureka(Income),Eureka(Physical_Activity),Eureka(Starch),
-      Eureka(Whole_grains),Eureka(Legumes),Eureka(Leafy_vegetable),
-      Eureka(Nuts),Eureka(Fruits),Eureka(Meat),
-      Eureka(Fish),Eureka(Junk_foods),Eureka(Cheese),
-      Eureka(Fura_da_nunu),Eureka(Sun_exposure),Eureka(Sleep_duration),
-      Eureka(Height),Eureka(Body_weight),Eureka(BMI),
-      Eureka(BMI_Result),Eureka(Waist),Eureka(Hip),
-      Eureka(Weight_Hip),Eureka(Weight_Hip_Result),Eureka(Systolic_blood),
-      Eureka(Diastolic_blood))
+socio_eco<-rbind(Eureka(ibi_data$Residence),Eureka(ibi_data$Educationa),
+      Eureka(ibi_data$Religion),Eureka(ibi_data$Marital),Eureka(ibi_data$Occupation),
+      Eureka(ibi_data$Income))
+socio_eco
+
+life_style<-rbind(Eureka(ibi_data$Physical_Activity),Eureka(ibi_data$Starch),
+      Eureka(ibi_data$Whole_grains),Eureka(ibi_data$Legumes),Eureka(ibi_data$Leafy_vegetable),
+      Eureka(ibi_data$Nuts),Eureka(ibi_data$Fruits),Eureka(ibi_data$Meat),
+      Eureka(ibi_data$Junk_foods),Eureka(ibi_data$Cheese),
+      Eureka(ibi_data$Fura_da_nunu),Eureka(ibi_data$Sun_exposure))
+life_style
+
+Anthropometric<-rbind(Eureka(ibi_data$Sleep_duration),
+      Eureka(ibi_data$Height),Eureka(ibi_data$Body_weight),Eureka(ibi_data$BMI),
+      Eureka(ibi_data$BMI_Result),Eureka(ibi_data$Waist),Eureka(ibi_data$Hip),
+      Eureka(ibi_data$Weight_Hip),Eureka(ibi_data$Weight_Hip_Result),Eureka(ibi_data$Systolic_blood)       ,Eureka(ibi_data$Diastolic_blood))
+Anthropometric
+
+Biochemical<- rbind(Eureka(ibi_data$ALT),
+      Eureka(ibi_data$AST),Eureka(ibi_data$ALP),Eureka(ibi_data$TC),
+      Eureka(ibi_data$HDL),Eureka(ibi_data$LDL),Eureka(ibi_data$TG),
+      Eureka(ibi_data$GFR),Eureka(ibi_data$HOMA_IR),Eureka(ibi_data$Liver_Size)       ,Eureka(ibi_data$STF),Eureka(ibi_data$VFT))
+
+Univariat<-rbind(Eureka(new_data$Residence),Eureka(new_data$Educationa),
+      Eureka(new_data$Religion),Eureka(new_data$Marital),Eureka(new_data$Occupation),
+      Eureka(new_data$Income),Eureka(new_data$Physical_Activity),Eureka(new_data$Starch),
+      Eureka(new_data$Whole_grains),Eureka(new_data$Legumes),Eureka(new_data$Leafy_vegetable),
+      Eureka(new_data$Nuts),Eureka(new_data$Fruits),Eureka(new_data$Meat),
+      Eureka(new_data$Junk_foods),Eureka(new_data$Cheese),
+      Eureka(new_data$Fura_da_nunu),Eureka(new_data$Sun_exposure),Eureka(new_data$Sleep_duration),
+      Eureka(new_data$Height),Eureka(new_data$Body_weight),Eureka(new_data$BMI),
+      Eureka(new_data$BMI_Result),Eureka(new_data$Waist),Eureka(new_data$Hip),
+      Eureka(new_data$Weight_Hip),Eureka(new_data$Weight_Hip_Result),Eureka(new_data$Systolic_blood)       ,Eureka(new_data$Diastolic_blood))
 
 Univariat
 
 glm(group~GFR+Liver_Size+STF+VFT+ALT+ALP,data = new_data,family = binomial)%>%summary()
+
+new_data %>% mutate(HOMA_IR_group=cut(HOMA_IR,breaks = c(0,2,Inf),
+            labels = c("low","high")))%>%group_by(HOMA_IR_group) %>% count()
+
+
+Socio_economics<-glm(factor(BLS)~Residence+Educationa+Religion+Income, 
+    data= ibi_data,
+    family= binomial) 
+summary(Socio_economics) %>%coefficients()%>%
+    cbind(exp(confint(Socio_economics)))%>%
+    subset(select=c("Estimate","2.5 %","97.5 %","Pr(>|z|)")) %>% 
+    data.frame()%>%  mutate(Estimate=exp(Estimate)) %>% 
+    write.csv("socio_economics.csv")
+
+life_style<-glm(factor(grp)~Physical_Activity+Leafy_vegetable+Junk_foods+Cheese+Fura_da_nunu+Sun_exposure+Sleep_duration, 
+    data= ibi_data,
+    family= binomial)
+
+summary(life_style) %>%coefficients()%>%
+    cbind(exp(confint(life_style)))%>%
+    subset(select=c("Estimate","2.5 %","97.5 %","Pr(>|z|)")) %>% 
+    data.frame()%>%  mutate(Estimate=exp(Estimate)) %>% 
+    write.csv("lifestyle.csv")
+
+anthro<-glm(factor(grp)~Body_weight+BMI+Waist+Hip+Weight_Hip+Systolic_blood+Diastolic_blood, 
+    data= ibi_data,
+    family= binomial)
+
+summary(anthro) %>%coefficients()%>%
+    cbind(exp(confint(life_style)))%>%
+    subset(select=c("Estimate","2.5 %","97.5 %","Pr(>|z|)")) %>% 
+    data.frame()%>%  mutate(Estimate=exp(Estimate)) %>% 
+    write.csv("lifestyle.csv")
 ```
 
 
+```{r}
+#### Comparing means
+ibi_data$HOMA_IR<- as.numeric(ibi_data$HOMA_IR)
+
+ggplot(ibi_data,aes(x=factor(BLS,labels = c("Negative","Mild","Moderate","Severe")),y=HOMA_IR))+
+    geom_boxplot()+
+    geom_jitter(position = position_jitter(0.2))+
+    scale_fill_brewer(palette = "Dark2")+labs(x="",y="HOMA IR")+theme_minimal()+
+    stat_compare_means(method = "anova",label.y = 1.2)+
+    stat_compare_means(aes(label=after_stat(p.signif)),method = "t.test",ref.group = "Negative")
+
+
+ggplot(ibi_data,aes(x=factor(BLS,labels = c("Negative","Mild","Moderate","Severe")),y=GFR))+
+    geom_boxplot()+
+    geom_jitter(position = position_jitter(0.2))+
+    scale_fill_brewer(palette = "Dark2")+labs(x="",y="HOMA IR")+theme_minimal()+
+    stat_compare_means(method = "anova",label.y = 1.2)+
+    stat_compare_means(aes(label=after_stat(p.signif)),method = "t.test",ref.group = "Negative")
+
+stat_test1<-ibi_data %>% 
+    dunn_test(HOMA_IR~BLS,p.adjust.method = "none") %>% add_xy_position(x="BLS")
+# write.csv("HOMA_IR_stat.csv") %>% 
+
+
+
+ggplot(ibi_data,aes(x=factor(BLS,labels = c("Negative","Mild","Moderate","Severe")),y=GFR))+
+    geom_boxplot()+
+    geom_jitter(position = position_jitter(0.2))+
+    scale_fill_brewer(palette = "Dark2")+labs(x="",y="HOMA IR")+theme_minimal()+
+    stat_compare_means(method = "anova",label.y = 1.2)+
+    stat_pvalue_manual(stat_test1,position = position_dodge(0.8))
+```
 
 
